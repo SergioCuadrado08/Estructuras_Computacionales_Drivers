@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "ring_buffer.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,7 +44,9 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+uint8_t rx_buffer[16];
+ring_buffer_t ring_buffer_uart_rx;
+uint8_t rx_data;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -51,12 +54,20 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+int _write(int file, char *ptr, int len)
+{
+	HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+	return len;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	ring_buffer_put(&ring_buffer_uart_rx, rx_data);
+	HAL_UART_Receive_IT(&huart2, &rx_data, 1);
+}
 /* USER CODE END 0 */
 
 /**
@@ -89,6 +100,9 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  ring_buffer_init (&ring_buffer_uart_rx, rx_buffer, 16);
+
+  HAL_UART_Receive_IT(&huart2, &rx_data, 1);
 
   /* USER CODE END 2 */
 
@@ -96,12 +110,23 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  uint16_t size = ring_buffer_size(&ring_buffer_uart_rx);
+	  if(size!=0){
+		  uint8_t rx_data[size];
+		  for (uint16_t idx = 0; idx < size; idx++){
+			  ring_buffer_get(&ring_buffer_uart_rx,&rx_data[idx]);
+		  }
+		  rx_data[size] = 0;
+		  printf("Rec: %s\r\n",rx_data);
+	  }
+	  }
+	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-}
+
 
 /**
   * @brief System Clock Configuration
