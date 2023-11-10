@@ -19,7 +19,8 @@ void ring_buffer_init (ring_buffer_t *ring_buffer, uint8_t *buffer, uint16_t cap
 
 }
 
-uint8_t ring_buffer_put(ring_buffer_t *ring_buffer, uint8_t data){
+uint8_t ring_buffer_put(ring_buffer_t *ring_buffer, uint8_t data)
+{
 	ring_buffer->buffer[ring_buffer-> head]=data;
 	ring_buffer->head = (ring_buffer-> head + 1) % ring_buffer->capacity;
 
